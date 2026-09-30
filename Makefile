@@ -12,6 +12,7 @@ PLATFORMS      := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd6
 all: check
 
 check:
+	go mod tidy -diff
 	@test -z "$$(gofmt -l .)" || (gofmt -l .; exit 1)
 	go vet ./...
 	go test -race ./...

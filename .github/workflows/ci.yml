@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   verify:
-    name: Tidy, format, vet, test, and package
+    name: Check and package
     runs-on: ubuntu-latest
     steps:
       # go.mod resolves the Kandev SDK from a sibling checkout: plugin/../kandev/apps/backend.
@@ -38,13 +38,7 @@ jobs:
           go-version-file: plugin/go.mod
           cache-dependency-path: plugin/go.sum
 
-      - name: Check module files are tidy
-        working-directory: plugin
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
-
-      - name: Format, vet, and test
+      - name: Tidy, format, vet, and test
         working-directory: plugin
         run: make check
 
