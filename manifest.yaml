@@ -1,0 +1,107 @@
+id: "kandev-plugin-lambda-microvm"
+api_version: 2
+min_kandev_version: "0.96.0"
+version: "0.2.0"
+display_name: "AWS Lambda MicroVM"
+description: "Runs each agent session in its own disposable AWS Lambda MicroVM, reached directly over an authenticated HTTPS endpoint."
+author: "abhishekbiyala"
+categories: ["tools", "connector"]
+repo_url: "https://github.com/abhishekbiyala/kandev-plugin-lambda-microvm"
+homepage: "https://github.com/abhishekbiyala/kandev-plugin-lambda-microvm"
+license: "Apache-2.0"
+
+runtime:
+  type: binary
+  executables:
+    linux-amd64: "server/plugin-linux-amd64"
+    linux-arm64: "server/plugin-linux-arm64"
+    darwin-amd64: "server/plugin-darwin-amd64"
+    darwin-arm64: "server/plugin-darwin-arm64"
+    windows-amd64: "server/plugin-windows-amd64.exe"
+
+capabilities:
+  # The credential source is kept in the host vault for calls that carry no profile.
+  secrets: true
+  executor_provider: true
+
+executor_providers:
+  - key: "lambda-microvm"
+    display_name: "AWS Lambda MicroVM"
+    description: "A disposable single-CPU microVM per session, with a bounded 8-hour lifetime."
+    contract_version: 1
+    supported_state_versions: [1]
+    profile_schema:
+      type: object
+      required: [region, image_arn, credential_source]
+      properties:
+        region:
+          type: string
+          title: Region
+          description: The AWS region that runs the environments.
+        image_arn:
+          type: string
+          title: MicroVM image
+          description: The ARN of a MicroVM image built from this plugin's Dockerfile.
+        credential_source:
+          type: string
+          title: AWS credentials
+          description: "host uses the credentials of the machine running Kandev (its IAM role, environment, or default profile). profile uses a named profile from the shared AWS config. static uses the access keys below."
+          enum: [host, profile, static]
+        aws_profile:
+          type: string
+          title: AWS profile
+          description: The shared config profile to use when AWS credentials is profile.
+        role_arn:
+          type: string
+          title: Role to assume
+          description: Optional. An IAM role Kandev assumes, with the credentials above, to manage environments.
+        external_id:
+          type: string
+          title: External ID
+          description: Optional. The external ID the role to assume requires.
+        execution_role_arn:
+          type: string
+          title: Environment role
+          description: Optional. The IAM role each environment runs as, for example to give the coding agent Amazon Bedrock access without API keys.
+        access_key_id:
+          type: string
+          title: Access key ID
+          description: Required when AWS credentials is static.
+          secret: true
+        secret_access_key:
+          type: string
+          title: Secret access key
+          description: Required when AWS credentials is static.
+          secret: true
+        session_token:
+          type: string
+          title: Session token
+          description: Optional, for temporary static credentials. Environments cannot be managed after it expires.
+          secret: true
+    resource_state_schema:
+      type: object
+      additionalProperties: false
+      required: [microvm_id, image_arn, region]
+      properties:
+        microvm_id:
+          type: string
+          title: Environment
+          description: The MicroVM identifier.
+        image_arn:
+          type: string
+          title: Image
+          description: The image the environment was launched from.
+        region:
+          type: string
+          title: Region
+          description: The region the environment runs in.
+    capabilities:
+      terminal: true
+      files: true
+      git: true
+      embedded_editor: true
+      preview: true
+      reattach: true
+      # The platform ends every MicroVM after 8 hours of wall-clock time.
+      retention: bounded
+      maximum_lifetime_seconds: 28800

@@ -1,0 +1,29 @@
+# Kandev Lambda MicroVM image: the lifecycle hook bootstrap plus agentctl.
+#
+# A MicroVM filesystem is a memory snapshot, so agentctl is baked in and the image
+# must be rebuilt whenever the Kandev version changes. `make build-image-artifacts`
+# stages this file and both binaries (linux/arm64) in build/image.
+FROM public.ecr.aws/lambda/microvms:al2023-minimal
+
+# bash for Kandev terminals, git for workspaces, Node.js for npm-distributed agents.
+RUN dnf install -y bash git ca-certificates nodejs npm tar gzip findutils \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf \
+    && mkdir -p /workspace /opt/kandev
+
+# Agents listed in agents.txt (one npm package@version per line, matching the
+# versions Kandev pins) are installed where Kandev's agent launcher looks for them:
+# the managed npm prefix for uid 0. Otherwise each session downloads its agent.
+COPY agents.txt /opt/kandev/agents.txt
+RUN prefix=/tmp/kandev-managed-npm-runtime-$(printf 0 | sha256sum | cut -c1-16) \
+    && mkdir -p "$prefix" && chmod 0700 "$prefix" \
+    && grep -v '^\s*\(#\|$\)' /opt/kandev/agents.txt | while read -r package; do \
+         npx --yes --prefix "$prefix" "$package" --version || exit 1; \
+       done
+
+COPY dist/microvm-bootstrap dist/agentctl /opt/kandev/
+RUN chmod 0700 /opt/kandev/microvm-bootstrap /opt/kandev/agentctl
+
+EXPOSE 8080
+ENTRYPOINT ["/opt/kandev/microvm-bootstrap"]
+CMD ["-hook-port", "8080"]
