@@ -29,7 +29,7 @@ jobs:
         with:
           repository: kdlbs/kandev
           path: kandev
-          ref: abc7a85f1aa16762f33aca7c8d1f8947a206f939
+          ref: 61cc87cc103272129038da1693df670474e83430
           sparse-checkout: apps/backend
 
       - name: Set up Go

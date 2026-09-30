@@ -42,8 +42,15 @@ authenticated HTTPS endpoint.
 3. **Package and install** the plugin: `make package`, then install
    `dist/*.tar.gz` in Kandev.
 
-4. **Create an executor profile** in Settings > Executors with the region, the
-   image ARN, and a credential source (below).
+4. **Make Kandev reachable from AWS.** Set `githubCredentialBroker.publicBaseUrl`
+   (or `KANDEV_GITHUB_CREDENTIAL_BROKER_PUBLIC_BASE_URL`) to an HTTPS URL of your
+   Kandev that the MicroVM can reach. The agent calls back to Kandev through it.
+
+5. **Create an executor profile** in Settings > Executors with the region, the
+   image ARN, and a credential source (below). Select the agent credentials to
+   copy into the environment in the profile's Remote Credentials section.
+
+The task repository is cloned to `/workspace/<repository>-<branch>`.
 
 ## AWS credentials
 
@@ -88,8 +95,8 @@ plus `iam:PassRole` on the environment role, if one is set.
   `AWS_REGION` is already set inside the environment.
 - **API keys.** Environment variables on the Kandev agent profile, such as
   `ANTHROPIC_API_KEY`, are passed to the agent.
-- **CLI login files** (for example OpenCode's `auth.json`) are not copied into
-  plugin environments by Kandev yet.
+- **CLI login files** (for example OpenCode's `auth.json`) are copied when selected
+  in the profile's Remote Credentials section.
 
 ## Development
 
@@ -113,5 +120,7 @@ plugin template.
 
 ## Requirements
 
-Kandev with remote executor plugin support that creates agentctl session
-instances ([kdlbs/kandev#4068](https://github.com/kdlbs/kandev/pull/4068)).
+A Kandev release that includes
+[kdlbs/kandev#4068](https://github.com/kdlbs/kandev/pull/4068) (agentctl session
+instances) and [kdlbs/kandev#4099](https://github.com/kdlbs/kandev/pull/4099)
+(public API URL, agent credentials, repository clone, rollback cleanup).
